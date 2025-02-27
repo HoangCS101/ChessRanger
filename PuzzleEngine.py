@@ -17,11 +17,14 @@ class GameState:
         self.pins = []
         self.checks = []
         
+    def __lt__(self, other):
+        return False  # Ensures Python doesn't try to compare GameState objects
+    
     def get_pieces(self):
         pieces = []
         for row in self.board:
             for square in row:
-                if square != '--':  # Nếu ô không trống
+                if square != '--':
                     pieces.append(square)
         return pieces
 

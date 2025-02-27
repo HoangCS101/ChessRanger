@@ -5,6 +5,83 @@ import ChessSearch
 
 p.init()
 
+# Kích thước màn hình
+WIDTH, HEIGHT = 800, 600
+screen = p.display.set_mode((WIDTH, HEIGHT))
+p.display.set_caption("Select Algorithm")
+
+font = p.font.SysFont('Arial', 40, True)
+clock = p.time.Clock()
+
+# Màu sắc
+MAIN_COLOR = (118, 148, 85)  # #769455 (Xanh lá)
+DARK_GREEN = (98, 128, 65)
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+
+# Vẽ nền gradient từ đậm đến nhạt
+def draw_background():
+    for y in range(HEIGHT):
+        color = (
+            MAIN_COLOR[0] - y // 10,
+            MAIN_COLOR[1] - y // 10,
+            MAIN_COLOR[2] - y // 10
+        )
+        p.draw.line(screen, color, (0, y), (WIDTH, y))
+
+# Tạo nút bấm
+class Button:
+    def __init__(self, text, x, y, w, h, color, hover_color):
+        self.text = text
+        self.rect = p.Rect(x, y, w, h)
+        self.color = color
+        self.hover_color = hover_color
+
+    def draw(self, screen, mouse_pos):
+        color = self.hover_color if self.rect.collidepoint(mouse_pos) else self.color
+        p.draw.rect(screen, color, self.rect, border_radius=10)
+        label = font.render(self.text, True, WHITE)
+        screen.blit(label, (self.rect.x + 20, self.rect.y + 10))
+
+    def is_clicked(self, event):
+        return event.type == p.MOUSEBUTTONDOWN and self.rect.collidepoint(event.pos)
+
+# Khởi tạo nút chọn thuật toán
+dfs_button = Button("ChessDFS", 270, 250, 260, 60, DARK_GREEN, MAIN_COLOR)
+astar_button = Button("ChessAStar", 270, 350, 260, 60, DARK_GREEN, MAIN_COLOR)
+
+def select_algorithm():
+    selected_algorithm = None
+    while selected_algorithm is None:
+        mouse_pos = p.mouse.get_pos()
+        screen.fill(WHITE)
+        draw_background()
+
+        # Tiêu đề
+        label = font.render("Select Algorithm", True, WHITE)
+        screen.blit(label, (270, 150))
+
+        # Vẽ nút
+        dfs_button.draw(screen, mouse_pos)
+        astar_button.draw(screen, mouse_pos)
+
+        for event in p.event.get():
+            if event.type == p.QUIT:
+                p.quit()
+                exit()
+            if dfs_button.is_clicked(event):
+                selected_algorithm = "DFS"
+            if astar_button.is_clicked(event):
+                selected_algorithm = "AStar"
+        
+        p.display.flip()
+        clock.tick(30)
+
+    return selected_algorithm
+
+algorithm = select_algorithm()
+
+
 # Chess board settings
 board_width = board_height = 680
 dimension = 8  # 8x8 chess board
@@ -40,11 +117,16 @@ def main():
     move_log_font = p.font.SysFont('Arial', 14, False, False)
 
     game_state = ChessEngine.GameState()
-    dfs_explorer = ChessSearch.ChessDFS(game_state)
-    dfs_explorer.explore()
+    
+    if algorithm == "DFS":
+        explorer = ChessSearch.ChessDFS(game_state)
+    else:
+        explorer = ChessSearch.ChessAStar(game_state)
+    
+    explorer.explore()
 
     # Print all possible board states explored
-    for i, state in enumerate(dfs_explorer.get_explored_states()):
+    for i, state in enumerate(explorer.get_explored_states()):
         print(f"State {i + 1}:")
         
         # Print every board state to terminal

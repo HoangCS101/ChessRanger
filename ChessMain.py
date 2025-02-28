@@ -2,10 +2,10 @@ import pygame as p
 import time
 import PuzzleEngine as ChessEngine
 import ChessSearch
+import sys
 
 p.init()
 
-# Kích thước màn hình
 WIDTH, HEIGHT = 800, 600
 screen = p.display.set_mode((WIDTH, HEIGHT))
 p.display.set_caption("Select Algorithm")
@@ -13,13 +13,11 @@ p.display.set_caption("Select Algorithm")
 font = p.font.SysFont('Arial', 40, True)
 clock = p.time.Clock()
 
-# Màu sắc
-MAIN_COLOR = (118, 148, 85)  # #769455 (Xanh lá)
+MAIN_COLOR = (118, 148, 85)
 DARK_GREEN = (98, 128, 65)
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
-# Vẽ nền gradient từ đậm đến nhạt
 def draw_background():
     for y in range(HEIGHT):
         color = (
@@ -29,7 +27,6 @@ def draw_background():
         )
         p.draw.line(screen, color, (0, y), (WIDTH, y))
 
-# Tạo nút bấm
 class Button:
     def __init__(self, text, x, y, w, h, color, hover_color):
         self.text = text
@@ -46,7 +43,6 @@ class Button:
     def is_clicked(self, event):
         return event.type == p.MOUSEBUTTONDOWN and self.rect.collidepoint(event.pos)
 
-# Khởi tạo nút chọn thuật toán
 dfs_button = Button("ChessDFS", 270, 250, 260, 60, DARK_GREEN, MAIN_COLOR)
 astar_button = Button("ChessAStar", 270, 350, 260, 60, DARK_GREEN, MAIN_COLOR)
 
@@ -57,11 +53,9 @@ def select_algorithm():
         screen.fill(WHITE)
         draw_background()
 
-        # Tiêu đề
         label = font.render("Select Algorithm", True, WHITE)
         screen.blit(label, (270, 150))
 
-        # Vẽ nút
         dfs_button.draw(screen, mouse_pos)
         astar_button.draw(screen, mouse_pos)
 
@@ -109,6 +103,22 @@ def animate_auto_moves(screen, move_log_font, game_state, move_history):
         time.sleep(1) # 1 second delay
         p.display.flip()
 
+def get_size(obj, seen=None):
+    """ Recursively find the size of objects. """
+    if seen is None:
+        seen = set()
+    obj_id = id(obj)
+    if obj_id in seen:
+        return 0
+    seen.add(obj_id)
+    size = sys.getsizeof(obj)
+    if isinstance(obj, dict):
+        size += sum(get_size(v, seen) for v in obj.values())
+        size += sum(get_size(k, seen) for k in obj.keys())
+    elif isinstance(obj, (list, tuple, set)):
+        size += sum(get_size(i, seen) for i in obj)
+    return size
+
 def main():
     
     screen = p.display.set_mode((board_width + move_log_panel_width, board_height))
@@ -123,8 +133,11 @@ def main():
     else:
         explorer = ChessSearch.ChessAStar(game_state)
     
+    start_time = time.time()
     explorer.explore()
-
+    end_time = time.time()
+    execution_time = end_time - start_time
+    
     # Print all possible board states explored
     for i, state in enumerate(explorer.get_explored_states()):
         print(f"State {i + 1}:")
@@ -143,6 +156,10 @@ def main():
         if len(pieces) == 1:
             move_history = state[1]
 
+    # Measure space used by explored states
+    memory_usage = get_size(explorer.get_explored_states())
+    print(f"Memory Usage: {memory_usage / (1024 * 1024):.4f} MB")
+    print(f"Execution Time: {execution_time:.4f} seconds")
     load_images()
     running = True
 
@@ -151,10 +168,7 @@ def main():
             if event.type == p.QUIT:
                 running = False
             elif event.type == p.KEYDOWN:
-                if event.key == p.K_r:  # Reset bàn cờ khi bấm 'r'
-                    game_state = ChessEngine.GameState()
-                    draw_game_state(screen, game_state, (), move_log_font)
-                if event.key == p.K_SPACE:  # Press SPACE to animate solution moves
+                if event.key == p.K_SPACE: # Don't hit it twice!!!
                     animate_auto_moves(screen, move_log_font, game_state, move_history)
         
         draw_game_state(screen, game_state, (), move_log_font)

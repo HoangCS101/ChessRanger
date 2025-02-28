@@ -67,15 +67,6 @@ class GameState:
 
         valid_moves = self.get_all_possible_moves()
 
-        # if len(valid_moves) == 0:  # Either checkmate or stalemate
-        #     if self.in_check:
-        #         self.checkmate = True
-        #     else:
-        #         self.stalemate = True
-        # else:
-        #     self.checkmate = False
-        #     self.stalemate = False
-
         return valid_moves
 
     def get_all_possible_moves(self):
